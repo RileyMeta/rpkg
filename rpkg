@@ -323,10 +323,7 @@ patch_search() {
 
 file_exists() {
     local name="$1"
-    local full_file=$(realpath "$PKG_DIR/$name")
-
-    local size
-    size=$(numfmt --to=iec --suffix=B --format="%.2f" "$(wc -c < "$full_file")")
+    full_file=$(realpath "$PKG_DIR/$name")
 
     if [[ ! -f "$full_file" ]]; then
         if [ "$QUIET" -eq 0 ]; then
@@ -346,8 +343,8 @@ file_exists() {
         fi
 
         local prompt="\n${TXT_BOLD_YELLOW}Package [${TXT_YELLOW}$name${TXT_BOLD_YELLOW}] already exists in:${TXT_END} $PKG_DIR"
-        prompt+="\n  ${TXT_BOLD}Size:${TXT_END} $size"
-        prompt+="\n  ${TXT_BOLD}Location:${TXT_END} $full_file"
+        prompt+="\n  ${TXT_BOLD}Size:${TXT_END} $file_size $measurement\n"
+        prompt+="  ${TXT_BOLD}Location:${TXT_END} $full_file"
         echo -e "$prompt"
         return 0
     fi
@@ -436,7 +433,15 @@ verify_checksum() {
 }
 
 download_sumlist() {
-    curl "$LFS_CHECKSUM" -o "$MD5SUMS"
+    if [ "$QUIET" -eq 1 ]; then
+        echo -e "${TXT_BOLD}Download LFS checksum file...${TXT_END}"
+    fi
+
+    curl -fsSL "$LFS_CHECKSUM" \
+        -A "$USER_AGENT" \
+        --connect-timeout "$TIME_OUT" \
+        --max-time 10 \
+        -o "$MD5SUMS"
 }
 
 in_sumlist() {
@@ -526,13 +531,10 @@ failure() {
 }
 
 success() {
+    # numfmt will thrown an error if the file doesn't exist
     local path="$1"
-
-    local full_file
-    full_file=$(realpath "$PKG_DIR/$path")
-
-    local size
-    size=$(numfmt --to=iec --suffix=B --format="%.2f" "$(wc -c < "$full_file")")
+    local full_file=$(realpath "$PKG_DIR/$path")
+    local size=$(numfmt --to=iec --suffix=B --format="%.2f" "$(wc -c < "$full_file")")
 
     local prompt="${TXT_BOLD_GREEN}Successfully downloaded:${TXT_END} $path"
     prompt+="\n  ${TXT_BOLD}Size:${TXT_END} $size"
