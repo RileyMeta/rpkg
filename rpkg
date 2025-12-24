@@ -34,6 +34,10 @@ TXT_RED='\033[0;31m'
 TXT_GREEN='\033[0;32m'
 TXT_YELLOW='\033[0;33m'
 TXT_CYAN='\033[0;36m'
+TXT_BOLD_RED='\033[1;31m'
+TXT_BOLD_GREEN='\033[1;32m'
+TXT_BOLD_YELLOW='\033[1;33m'
+TXT_BOLD_CYAN='\033[1;36m'
 
 trap interrupt_cleanup SIGINT
 
@@ -77,7 +81,6 @@ create_repolist() {
     local content="# This is a generic repo list created by spkg\n"
     content+="https://lfs.gnlug.org/pub/lfs/lfs-packages/12.4/\n"
     content+="https://ftp.lfs-matrix.net/pub/lfs/lfs-packages/12.4/\n"
-    content+="https://mirror.download.it/lfs/pub/lfs/lfs-packages/12.4/\n"
     content+="https://ftp.osuosl.org/pub/lfs/lfs-packages/12.4/\n"
     content+="https://mirror.download.it/lfs/pub/lfs/lfs-packages/12.4/\n"
     content+="https://mirror.koddos.net/lfs/lfs-packages/12.4/\n"
@@ -118,9 +121,9 @@ load_repos() {
 
         if [ "$REPO_LEN" -gt 1 ]; then
             repo_prompt="${repo_prompt}s"
-            prompt+=" [${TXT_GREEN}$REPO_LEN $repo_prompt${TXT_END}]"
+            prompt+=" ${TXT_BOLD}[${TXT_BOLD_GREEN}$REPO_LEN $repo_prompt${TXT_END}${TXT_BOLD}]"
         else
-            prompt+=" [${TXT_RED}$REPO_LEN $repo_prompt${TXT_END}]"
+            prompt+=" ${TXT_BOLD}[${TXT_BOLD_RED}$REPO_LEN $repo_prompt${TXT_END}${TXT_BOLD}]"
         fi
 
         echo -e "$prompt"
@@ -140,11 +143,11 @@ load_repos() {
                 local speed=$(test_repo_speed "$repo")
                 if [ "$QUIET" -eq 0 ]; then
                     if (( $(awk "BEGIN {print ($speed < 5)}") )); then
-                        local speed_prompt="${TXT_GREEN}${speed:0:5}s${TXT_END}"
+                        local speed_prompt="${TXT_BOLD_GREEN}${speed:0:5}s${TXT_END}"
                     elif (( $(awk "BEGIN {print ($speed < 10)}") )); then
-                        local speed_prompt="${TXT_YELLOW}${speed:0:5}s${TXT_END}"
+                        local speed_prompt="${TXT_BOLD_YELLOW}${speed:0:5}s${TXT_END}"
                     else
-                        local speed_prompt="${TXT_RED}${speed:0:5}s${TXT_END}"
+                        local speed_prompt="${TXT_BOLD_RED}${speed:0:5}s${TXT_END}"
                     fi
 
                     echo -e "  $repo ... ${TXT_BOLD}[${speed_prompt}${TXT_BOLD}]${TXT_END}"
@@ -179,7 +182,7 @@ load_repos() {
             fi
         fi
     elif [ "$REPO_LEN" -eq 0 ]; then
-        local err_prompt="${TXT_BOLD}${TXT_RED}[Error]:${TXT_END} "
+        local err_prompt="${TXT_BOLD_RED}[Error]:${TXT_END} "
         err_prompt+="There are no repositories in $REPO_LIST"
         echo -e "$err_prompt" >&2
         exit 1
@@ -227,9 +230,9 @@ pkg_search() {
 
         if [ -n "$path" ]; then
             SUCCESS_URLS+=("$repo$path")
-            echo -e "  $repo$path ... ${TXT_BOLD}${TXT_GREEN}[FOUND]${TXT_END}"
+            echo -e "  $repo$path ... ${TXT_BOLD_GREEN}[FOUND]${TXT_END}"
         else
-            echo -e "  $repo ... ${TXT_BOLD}${TXT_RED}[NOT FOUND]${TXT_END}"
+            echo -e "  $repo ... ${TXT_BOLD_RED}[NOT FOUND]${TXT_END}"
         fi
     done
 
@@ -240,7 +243,7 @@ pkg_search() {
             local repo_prompt="repository"
         fi
 
-        local err_prompt="${TXT_BOLD}${TXT_RED}[Error]:${TXT_END} "
+        local err_prompt="${TXT_BOLD_RED}[Error]:${TXT_END} "
         err_prompt+="\"$pkg\" was not found in $REPO_LEN $repo_prompt..."
         echo -e "$err_prompt" >&2
         return 1
@@ -248,22 +251,22 @@ pkg_search() {
 
     # Ask download to do it's job
     if [ "$FORCE_IGNORE" -eq 0 ]; then
-        if in_sumlist "$path"; then
-            if ! file_exists "$path"; then
+        if ! file_exists "$path"; then
+            if in_sumlist "$path"; then
                 if download_pkg "$path" "pkg"; then
                     success "$path" "pkg"
                 else
-                    local err_prompt="${TXT_BOLD}${TXT_RED}[Error]:${TXT_END} "
+                    local err_prompt="${TXT_BOLD_RED}[Error]:${TXT_END} "
                     err_prompt+="Unable to download $path after trying all available mirrors."
                     echo -e "$err_prompt" >&2
                     exit 1
                 fi
+            else
+                local err_prompt="${TXT_BOLD_RED}[Error]:${TXT_END} "
+                err_prompt+="\"$path\" not in official LFS package list - aborting"
+                echo -e "$err_prompt" >&2
+                exit 1
             fi
-        else
-            local err_prompt="${TXT_BOLD}${TXT_RED}[Error]:${TXT_END} "
-            err_prompt+="\"$path\" not in official LFS package list - aborting"
-            echo -e "$err_prompt" >&2
-            exit 1
         fi
     fi
 }
@@ -285,35 +288,49 @@ patch_search() {
         if [ -n "$path" ]; then
             SUCCESS_PATCH+=("$repo$path")
             if [ "$QUIET" -eq 0 ]; then
-                echo -e "  $repo$path ... ${TXT_BOLD}${TXT_GREEN}[FOUND]${TXT_END}"
+                echo -e "  $repo$path ... ${TXT_BOLD_GREEN}[FOUND]${TXT_END}"
             fi
         else
             if [ "$QUIET" -eq 0 ]; then
-                echo -e "  $repo ... ${TXT_BOLD}${TXT_YELLOW}[NOT FOUND]${TXT_END}"
+                echo -e "  $repo ... ${TXT_BOLD_YELLOW}[NOT FOUND]${TXT_END}"
             fi
         fi
     done
 
     if [ "${#SUCCESS_PATCH[@]}" -eq 0 ]; then
-        local prompt="${TXT_BOLD}${TXT_CYAN}[Note]:${TXT_END} "
+        local prompt="${TXT_BOLD_CYAN}[Note]:${TXT_END} "
         prompt+="No patches were found for $name (this may be normal)."
         echo -e "$prompt"
         return 0 # Most packages will not have patches
     fi
 
     # Ask download to do it's job
-    if in_sumlist "$path"; then
-        if ! file_exists "$path"; then
+    if ! file_exists "$path"; then
+        if in_sumlist "$path"; then
             if download_pkg "$path" "patch"; then
                 success "$path" "patch"
             fi
+        else
+            local prompt="${TXT_BOLD_YELLOW}[Warning]:${TXT_END} "
+            prompt+="Patch $path not in official LFS list - skipping"
+            echo -e "$prompt"
+            return 0 # Not Fatal for patches
         fi
-    else
-        local prompt="${TXT_BOLD}${TXT_YELLOW}[Warning]:${TXT_END} "
-        prompt+="Patch $path not in official LFS list - skipping"
-        echo -e "$prompt"
-        return 0 # Not Fatal for patches
     fi
+
+
+    # if in_sumlist "$path"; then
+    #     if ! file_exists "$path"; then
+    #         if download_pkg "$path" "patch"; then
+    #             success "$path" "patch"
+    #         fi
+    #     fi
+    # else
+    #     local prompt="${TXT_BOLD_YELLOW}[Warning]:${TXT_END} "
+    #     prompt+="Patch $path not in official LFS list - skipping"
+    #     echo -e "$prompt"
+    #     return 0 # Not Fatal for patches
+    # fi
 
     return 0 # Even a failure is a Success in some ways
 }
@@ -324,7 +341,9 @@ file_exists() {
 
     if [[ ! -f "$full_file" ]]; then
         if [ "$QUIET" -eq 0 ]; then
-            echo -e "  ${TXT_BOLD}Package [$name] ${TXT_YELLOW}does not exist in:${TXT_END} $PKG_DIR"
+            prompt="  ${TXT_BOLD_YELLOW}File [${TXT_END}${TXT_YELLOW}$name${TXT_BOLD_YELLOW}] "
+            prompt+="${TXT_BOLD_YELLOW}does not exist in:${TXT_END} $PKG_DIR"
+            echo -e "$prompt"
         fi
         return 1
     else
@@ -338,7 +357,8 @@ file_exists() {
         fi
 
         local prompt="\n${TXT_BOLD}Package ${TXT_END}[$name] ${TXT_YELLOW}already exists in:${TXT_END} $PKG_DIR"
-        prompt+="\n  Size: $file_size $measurement\n  Location: $full_file"
+        prompt+="\n  ${TXT_BOLD}Size:${TXT_END} $file_size $measurement\n"
+        prompt+="  ${TXT_BOLD}Location:${TXT_END} $full_file"
         echo -e "$prompt"
         return 0
     fi
@@ -377,7 +397,7 @@ download_pkg() {
                     ACTIVE_DOWNLOAD=0
                     return 0 # Success
                 else
-                    echo -e "${TXT_BOLD}${TXT_RED}Checksum verification failed${TXT_END}, trying next mirror..."
+                    echo -e "${TXT_BOLD_RED}Checksum verification failed${TXT_END}, trying next mirror..."
                     ((idx++))
 
                     if [ "$idx" -eq "${#url_list[@]}" ]; then
@@ -438,23 +458,19 @@ in_sumlist() {
         download_sumlist
     fi
 
-    # if [ -z "$MD5SUMS" ] || [ ! -f "$MD5SUMS" ]; then
-    #     download_sumlist
-    # fi
-
     while IFS= read -r line; do
         [ -z "$line" ] || [[ "$line" == \#* ]] && continue
 
         local filename=$(echo "$line" | awk '{$1=""; print $0}' | xargs)
         if [[ "$filename" == "$name" ]]; then
             if [ "$QUIET" -eq 0 ]; then
-                echo -e "  $name found in md5sums list"
+                echo -e "  ${TXT_BOLD_GREEN}$name found in md5sums list${TXT_END}"
             fi
             return 0 # Found in list
         fi
     done < "$MD5SUMS"
 
-    local err_prompt="  ${TXT_BOLD}${TXT_RED}$name not found in md5sums list${TXT_END}"
+    local err_prompt="  ${TXT_BOLD_RED}$name not found in md5sums list${TXT_END}"
     err_prompt+=" - skipping download"
     echo -e "$err_prompt" >&2
     return 1 # Not Found
@@ -499,7 +515,7 @@ check_sums() {
 
     # Make sure file is found in MD5 before saving to the disk.
     if [ "$found" -eq 0 ]; then
-        local err_prompt="${TXT_BOLD}${TXT_RED}[Error]:${TXT_END} "
+        local err_prompt="${TXT_BOLD_RED}[Error]:${TXT_END} "
         err_prompt+="\"$name\" not found in md5sum list - cannot verify integrity"
         echo -e "$err_prompt" >&2
         clean_up "$name"
@@ -517,7 +533,7 @@ clean_up() {
 failure() {
     local name="$1"
     tries=$((${#SUCCESS_URLS} - 1)) # Number of URLS attempted
-    echo -e "${TXT_BOLD}${TXT_RED}Unable to download $name (after $tries tries)${TXT_END}" >&2
+    echo -e "${TXT_BOLD_RED}Unable to download $name (after $tries tries)${TXT_END}" >&2
 }
 
 success() {
@@ -529,9 +545,9 @@ success() {
     local size
     size=$(numfmt --to=iec --suffix=B --format="%.2f" "$(wc -c < "$full_file")")
 
-    local prompt="${TXT_BOLD}${TXT_GREEN}Successfully downloaded:${TXT_END} $path"
-    prompt+="\n  Size: $size"
-    prompt+="\n  Location: $full_file"
+    local prompt="${TXT_BOLD_GREEN}Successfully downloaded:${TXT_END} $path"
+    prompt+="\n  ${TXT_BOLD}Size:${TXT_END} $size"
+    prompt+="\n  ${TXT_BOLD}Location:${TXT_END} $full_file"
     echo -e "$prompt"
 }
 
@@ -539,11 +555,11 @@ interrupt_cleanup() {
     echo -e "\nCTRL+C pressed. Performing cleanup..." >&2
 
     if [ "$SORTING_IN_PROGRESS" -eq 1 ]; then
-        echo -e "${TXT_RED}$(rm -rvf "$REPO_LIST") (incomplete)${TXT_END}" >&2
+        echo -e "${TXT_BOLD_RED}$(rm -rvf "$REPO_LIST") ${TXT_RED}(incomplete)${TXT_END}" >&2
     fi
 
     if [ "$ACTIVE_DOWNLOAD" -eq 1 ]; then
-        echo -e "${TXT_RED}$(rm -rfv "$PKG_DIR$ACTIVE_PACKAGE") (incomplete)${TXT_END}" >&2
+        echo -e "${TXT_BOLD_RED}$(rm -rfv "$PKG_DIR$ACTIVE_PACKAGE") ${TXT_RED}(incomplete)${TXT_END}" >&2
     fi
 
     exit 130
@@ -592,8 +608,7 @@ main() {
 
             create_repolist
             load_repos
-            echo -e "$REPO_LIST created in $(realpath $REPO_LIST)" >&2
-            exit 1
+            echo -e "${TXT_BOLD_GREEN}$REPO_LIST created in:${TXT_END} $(realpath $REPO_LIST)" >&2
         fi
     fi
 
