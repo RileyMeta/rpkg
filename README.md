@@ -10,4 +10,4 @@ Custom flags you can pass to change the output
 - `-I`, `--ignore`: Ignore the checksum file and download anything from a repo
 
 ## Example
-<img width="865" height="441" alt="image" src="https://github.com/user-attachments/assets/cfa6eb88-3b1e-418e-9ebf-d685a922bc86" />
+<img width="856" height="452" alt="image" src="https://github.com/user-attachments/assets/385fbb3e-adf5-43ed-9fa1-7a46e0ce6e5b" />
