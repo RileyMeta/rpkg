@@ -637,9 +637,10 @@ help_info() {
     prompt+="\n  -f, --force-sort\tforce the downloader to re-sort the repositories"
     prompt+="\n  -p, --patch\t\tforce the downloader to check for patches"
     prompt+="\n  -q, --quiet\t\tsuppress the majority of the output"
+    prompt+="\n  -v, --verbose\t\tIncrease output clearity"
     prompt+="\n  -I, --ignore\t\t[!] Ignore the checksum file (Not Recommended)"
     prompt+="\n\n  -h, --help\t\tdisplay this help and exit"
-    prompt+="\n  -v, --version\t\toutput version information and exit"
+    prompt+="\n  -V, --version\t\toutput version information and exit"
     prompt+="\n\nReport bugs to: https://github.com/RileyMeta/spkgs-lfs/pulls"
 
     echo -e "$prompt"
